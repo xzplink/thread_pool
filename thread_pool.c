@@ -80,7 +80,7 @@ typedef struct _threadpool
 
 /* ------------------------------- prototypes ----------------------------- */
 static int thread_init(threadpool *p_tp, thread **p_thread, int id);
-static void *thread_do(thread *p_thread);
+static void *thread_run(thread *p_thread);
 static void thread_hold(int sig_id);
 static void thread_destroy(thread *p_thread);
 
@@ -264,7 +264,7 @@ static int thread_init(pthreadpool p_tp, thread **p_thread, int id)
 
     //static int idx = 0;
     //printf("-----------------create threads: %d\n", idx);
-    pthread_create(&(*p_thread)->pthread, NULL, (void *)thread_do, (*p_thread));
+    pthread_create(&(*p_thread)->pthread, NULL, (void *)thread_run, (*p_thread));
     pthread_detach((*p_thread)->pthread);
 
     return 0;
@@ -283,7 +283,7 @@ static void thread_hold(int sig_id)
 }
 
 
-static void *thread_do(thread *p_thread)
+static void *thread_run(thread *p_thread)
 {
     char thread_name[128] = {0};
     sprintf(thread_name, "thread-pool-%d", p_thread->id);
@@ -293,7 +293,7 @@ static void *thread_do(thread *p_thread)
 #elif defined(__APPLE__) && defined(__MACH__)
     pthread_setname_np(thread_name);
 #else
-    err("thread_do(): pthread_setname_np is not supported on the system\n");
+    err("thread_run(): pthread_setname_np is not supported on the system\n");
 #endif
     
     pthreadpool p_tp = p_thread->p_tp;
@@ -305,7 +305,7 @@ static void *thread_do(thread *p_thread)
     act.sa_handler = thread_hold;
     if (sigaction(SIGUSR1, &act, NULL) == -1)
     {
-        err("thread_do(): cannot handle SIGUSER1\n");
+        err("thread_run(): cannot handle SIGUSER1\n");
     }
 
     /* mark thread as alive (initialized) */
